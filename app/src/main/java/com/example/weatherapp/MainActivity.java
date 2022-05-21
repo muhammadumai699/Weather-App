@@ -1,12 +1,16 @@
 package com.example.weatherapp;
 
 import androidx.annotation.NonNull;
+import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 import androidx.recyclerview.widget.RecyclerView;
 
-
+import android.Manifest;
+import android.content.Context;
+import android.content.DialogInterface;
+import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.location.Address;
 import android.location.Geocoder;
@@ -14,6 +18,7 @@ import android.location.Location;
 import android.location.LocationListener;
 import android.location.LocationManager;
 import android.os.Bundle;
+import android.provider.Settings;
 import android.util.Log;
 import android.view.View;
 import android.view.WindowManager;
@@ -52,7 +57,10 @@ public class MainActivity extends AppCompatActivity {
     private ArrayList<weatherModel> weatherModelArrayList;
     private WeatherAdapter weatherAdapter;
     String FinalcityName;
+    Context mContext;
     private GpsTracker gpsTracker;
+    int LOCATION_REFRESH_TIME = 15000; // 15 seconds to update
+    int LOCATION_REFRESH_DISTANCE = 500; // 500 meters to update
 
     final int REQUEST_CODE = 101;
     LocationManager locationManager;
@@ -64,20 +72,13 @@ public class MainActivity extends AppCompatActivity {
 //        @Override
 //        public void onLocationChanged(final Location location) {
 //
-//            if (ActivityCompat.checkSelfPermission(MainActivity.this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(MainActivity.this, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
-//                return;
-//            }
-//            locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, LOCATION_REFRESH_TIME,
-//                    LOCATION_REFRESH_DISTANCE, mLocationListener);
 //
 //            double latitude = location.getLatitude();
 //            double longitude = location.getLongitude();
 //
 //
-//            String Value = getCityName(latitude, longitude);
-//
-//            locationManager = (LocationManager) getSystemService(LOCATION_SERVICE);
-//
+//            getCityName(latitude, longitude);
+//            getInfo(FinalcityName);
 //
 //        }
 //    };
@@ -119,50 +120,52 @@ public class MainActivity extends AppCompatActivity {
         getWindow().setFlags(WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS,
                 WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS);
 
+        mContext = this;
+        locationManager = (LocationManager) mContext.getSystemService(Context.LOCATION_SERVICE);
+        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+            return;
+        }
+        locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER,
+                2000,
+                10, locationListenerGPS);
+        isLocationEnabled();
+
         initViews();
-
-        try {
-            if (ContextCompat.checkSelfPermission(getApplicationContext(), android.Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
-                ActivityCompat.requestPermissions(this, new String[]{android.Manifest.permission.ACCESS_FINE_LOCATION}, 101);
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-
-        getLocation();
     }
 
-    public void getLocation() {
-        gpsTracker = new GpsTracker(MainActivity.this);
-        if (gpsTracker.canGetLocation()) {
-            double latitude = gpsTracker.getLatitude();
-            double longitude = gpsTracker.getLongitude();
-
-            getCityName(latitude, longitude);
-
-        } else {
-            gpsTracker.showSettingsAlert();
-        }
+    //getLocation();
 
 
-        getInfo(FinalcityName);
-
-        searchIcon.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                String city = etCityName.getText().toString().toUpperCase(Locale.ROOT);
-                if (city.isEmpty()) {
-                    Toast.makeText(MainActivity.this, "Please Enter the City Name",
-                            Toast.LENGTH_SHORT).show();
-                } else {
-                    etCityName.setText(city);
-
-                    getInfo(city);
-                    cityNameTV.setText(city);
-                }
-            }
-        });
-    }
+//    public void getLocation() {
+//        gpsTracker = new GpsTracker(MainActivity.this);
+//        if (gpsTracker.canGetLocation()) {
+//            double latitude = gpsTracker.getLatitude();
+//            double longitude = gpsTracker.getLongitude();
+//
+//            getCityName(latitude, longitude);
+//
+//        } else {
+//            gpsTracker.showSettingsAlert();
+//        }
+//
+//        getInfo(FinalcityName);
+//
+//        searchIcon.setOnClickListener(new View.OnClickListener() {
+//            @Override
+//            public void onClick(View view) {
+//                String city = etCityName.getText().toString().toUpperCase(Locale.ROOT);
+//                if (city.isEmpty()) {
+//                    Toast.makeText(MainActivity.this, "Please Enter the City Name",
+//                            Toast.LENGTH_SHORT).show();
+//                } else {
+//                    etCityName.setText(city);
+//
+//                    getInfo(city);
+//                    cityNameTV.setText(city);
+//                }
+//            }
+//        });
+//    }
 
 
     private void initViews() {
@@ -180,7 +183,6 @@ public class MainActivity extends AppCompatActivity {
         weatherAdapter = new WeatherAdapter(this, weatherModelArrayList);
         weatherRv.setAdapter(weatherAdapter);
     }
-
 
     private void getInfo(String cityName) {
         String url = "http://api.weatherapi.com/v1/forecast.json?key=176ae561d2394951ab4110659221905&q=" + cityName + "&days=1&aqi=yes&alerts=yes";
@@ -253,4 +255,61 @@ public class MainActivity extends AppCompatActivity {
         requestQueue.add(jsonObjectRequest);
     }
 
+
+    LocationListener locationListenerGPS = new LocationListener() {
+        @Override
+        public void onLocationChanged(android.location.Location location) {
+            double latitude = location.getLatitude();
+            double longitude = location.getLongitude();
+
+            getCityName(latitude, longitude);
+
+            getInfo(FinalcityName);
+        }
+
+        @Override
+        public void onStatusChanged(String provider, int status, Bundle extras) {
+
+        }
+
+        @Override
+        public void onProviderEnabled(String provider) {
+
+        }
+
+        @Override
+        public void onProviderDisabled(String provider) {
+
+        }
+    };
+
+    protected void onResume() {
+        super.onResume();
+        isLocationEnabled();
+    }
+
+
+    private void isLocationEnabled() {
+
+        if (!locationManager.isProviderEnabled(LocationManager.GPS_PROVIDER)) {
+            AlertDialog.Builder alertDialog = new AlertDialog.Builder(mContext);
+            alertDialog.setTitle("Enable Location");
+            alertDialog.setMessage("Your locations setting is not enabled. Please enabled it in settings menu.");
+            alertDialog.setPositiveButton("Location Settings", new DialogInterface.OnClickListener() {
+                public void onClick(DialogInterface dialog, int which) {
+                    Intent intent = new Intent(Settings.ACTION_LOCATION_SOURCE_SETTINGS);
+                    startActivity(intent);
+                }
+            });
+            alertDialog.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
+                public void onClick(DialogInterface dialog, int which) {
+                    dialog.cancel();
+                }
+            });
+            AlertDialog alert = alertDialog.create();
+            alert.show();
+        } else {
+            Toast.makeText(mContext, "Today's Weather", Toast.LENGTH_SHORT).show();
+        }
+    }
 }

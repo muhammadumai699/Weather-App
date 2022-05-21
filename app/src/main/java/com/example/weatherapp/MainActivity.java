@@ -48,6 +48,7 @@ import java.util.Locale;
 
 public class MainActivity extends AppCompatActivity {
 
+
     private RelativeLayout homeRl;
     private ProgressBar loadingPb;
     private TextView cityNameTV, tempratureTV, conditionTv;

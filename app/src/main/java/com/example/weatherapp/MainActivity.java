@@ -48,7 +48,6 @@ import java.util.Locale;
 
 public class MainActivity extends AppCompatActivity {
 
-
     private RelativeLayout homeRl;
     private ProgressBar loadingPb;
     private TextView cityNameTV, tempratureTV, conditionTv;
@@ -132,9 +131,23 @@ public class MainActivity extends AppCompatActivity {
         isLocationEnabled();
 
         initViews();
-    }
 
-    //getLocation();
+        searchIcon.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                String city = etCityName.getText().toString().toUpperCase(Locale.ROOT);
+                if (city.isEmpty()) {
+                    Toast.makeText(MainActivity.this, "Please Enter the City Name",
+                            Toast.LENGTH_SHORT).show();
+                } else {
+                    etCityName.setText(city);
+
+                    getInfo(city);
+                    cityNameTV.setText(city);
+                }
+            }
+        });
+    }
 
 
 //    public void getLocation() {
@@ -151,21 +164,6 @@ public class MainActivity extends AppCompatActivity {
 //
 //        getInfo(FinalcityName);
 //
-//        searchIcon.setOnClickListener(new View.OnClickListener() {
-//            @Override
-//            public void onClick(View view) {
-//                String city = etCityName.getText().toString().toUpperCase(Locale.ROOT);
-//                if (city.isEmpty()) {
-//                    Toast.makeText(MainActivity.this, "Please Enter the City Name",
-//                            Toast.LENGTH_SHORT).show();
-//                } else {
-//                    etCityName.setText(city);
-//
-//                    getInfo(city);
-//                    cityNameTV.setText(city);
-//                }
-//            }
-//        });
 //    }
 
 
